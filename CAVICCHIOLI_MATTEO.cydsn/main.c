@@ -10,16 +10,36 @@
  * ========================================
 */
 #include "project.h"
+#include "InterruptRoutines.h"
+#include "globalvariables.h"
+
+uint8 flag_UART = 0;
+
 
 int main(void)
 {
     CyGlobalIntEnable; /* Enable global interrupts. */
+    
+    int start = 0;
 
-    /* Place your initialization/startup code here (e.g. MyInst_Start()) */
+    UART_Start();
+    ISR_UART_StartEx(Custom_UART_ISR);
+    //ISR_TIMER_StartEx(Custom_TIMER_ISR);
+    
 
     for(;;)
     {
-        /* Place your application code here. */
+        if (flag_UART == 1)
+        {
+            if(UART_ReadRxData() == 0xA0)
+            {
+                start = 1;
+            }
+            
+            
+            
+        
+
     }
 }
 
