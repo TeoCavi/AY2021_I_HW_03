@@ -250,6 +250,10 @@
   </Group>
   <Data key="DataVersionKey" value="2" />
   <Group key="DWRInstGuidMapping">
+    <Group key="Interrupt">
+      <Data key="01afd255-e327-4d05-92ac-7efe46d066e3" value="ISR_UART" />
+      <Data key="49ff5505-a515-4ef0-a363-cccca3640f18" value="ISR_TIMER" />
+    </Group>
     <Group key="Pin">
       <Data key="4600c1a5-d476-4056-ad00-d1b7fea77016" value="BLUE_LED" />
       <Data key="1425177d-0d0e-4468-8bcc-e638e5509a9b" value="Rx_1" />
@@ -3338,6 +3342,22 @@
       </Group>
       <Group key="1024">
         <Data key="LevelKey" value="00" />
+      </Group>
+    </Group>
+  </Group>
+  <Group key="Interrupt">
+    <Group key="01afd255-e327-4d05-92ac-7efe46d066e3">
+      <Group key="CortexM3">
+        <Data key="Assigned" value="True" />
+        <Data key="Priority" value="6" />
+        <Data key="Vector" value="-1" />
+      </Group>
+    </Group>
+    <Group key="49ff5505-a515-4ef0-a363-cccca3640f18">
+      <Group key="CortexM3">
+        <Data key="Assigned" value="True" />
+        <Data key="Priority" value="7" />
+        <Data key="Vector" value="-1" />
       </Group>
     </Group>
   </Group>

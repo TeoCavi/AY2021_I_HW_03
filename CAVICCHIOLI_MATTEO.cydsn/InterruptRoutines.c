@@ -22,7 +22,7 @@ CY_ISR(Custom_UART_ISR)
 
 CY_ISR(Custom_TIMER_ISR)
 {
-    flag_TIMER = 0; 
+    flag_TIMER ++; 
     TIMER_UART_ReadStatusRegister();
 }
 
