@@ -12,7 +12,6 @@
 #include "project.h"
 #include "stdio.h"
 #include "InterruptRoutines.h"
-#include "globalvariables.h"
 
 uint8 flag_UART = 0;
 uint8 flag_TIMER = 0;
@@ -24,8 +23,10 @@ int main(void)
     
     
     uint8 data;
-    uint8 RGB[3] = {'\0'};
-    int start = 0, i = 18;
+    uint8 DC_red = 0;
+    uint8 DC_green = 0;
+    uint8 DC_blue = 0;
+
 
     UART_Start();
     ISR_UART_StartEx(Custom_UART_ISR);
@@ -35,57 +36,91 @@ int main(void)
     PWM_RG_Start();
     PWM_B_Start();
     
+    uint8 start = 0;
+    uint8 stop = 1;
+    uint8 red = 0;
+    uint8 green = 0;
+    uint8 blue = 0;
     
-
     for(;;)
     {
-        if (flag_UART == 1 && flag_TIMER <= 5)
+        if (flag_TIMER >= 5)
         {
-            data = UART_ReadRxData();
-            if (data == 'v' && i == 18)
-            {
-                UART_PutString("RGB LED Program $$$\r\n");
-            }
-            else if( data == 0xA0 && i == 18)
-            {
-                start = 1;
-                UART_PutString(" Start ");
-                TIMER_UART_Start();
-                i = 0;
-            }
-            else if ( data == 0xC0)
-            {
-                start = 0;
-                UART_ClearRxBuffer();
-                UART_PutString(" End \r\n");
-                TIMER_UART_Stop();
-                flag_TIMER = 0;
-                i = 18;
-                PWM_RG_WriteCompare1(RGB[0]);
-                PWM_RG_WriteCompare2(RGB[1]);
-                PWM_B_WriteCompare(RGB[2]);
-                
-            }
-            else if (start == 1)
-            {
-                RGB[i] = data;
-                UART_PutChar(RGB[i]);
-                flag_TIMER = 0;
-                /*TIMER_UART_Stop();
-                TIMER_UART_Init();
-                TIMER_UART_Enable();*/
-                i ++;
-            }
-            flag_UART = 0;
-        }
-        else if (start == 1 && flag_TIMER > 5)
-        {
-            start = 0;
-            UART_ClearRxBuffer();
+            UART_PutString(" To Much Time, Repeat\r\n");
             TIMER_UART_Stop();
             flag_TIMER = 0;
-            UART_PutString(" To Much Time, Repeat\r\n");
-            i = 18;
+            stop = 1;
+        }
+        else if (flag_UART == 1)
+        {
+            data = UART_ReadRxData();
+            if (data == 'v')
+            {
+                UART_PutString("RGB LED Program $$$\r\n");
+                flag_UART = 0;
+            }
+            else if((flag_UART) && (data == 0xA0) && (stop))
+            {
+                //UART_PutString(" Start ");
+                TIMER_UART_Start();
+                flag_TIMER = 0;
+                
+                start ++;
+                stop = 0;
+                flag_UART = 0;
+                
+                
+            }
+            else if((flag_UART) && (start) && (flag_TIMER < 5))
+            {
+                DC_red = data;
+                //UART_PutChar(DC_red);
+                TIMER_UART_Start();
+                flag_TIMER = 0;
+                red ++;
+                start  = 0;
+                flag_UART = 0;
+                
+            }
+            else if((red) && (flag_UART) && (flag_TIMER < 5) )
+            {
+                DC_green = data;
+                //UART_PutChar(DC_green);
+                TIMER_UART_Start();
+                flag_TIMER = 0;
+                green  ++;
+                red = 0;
+                flag_UART = 0;
+                
+            }
+            else if ((green) && (flag_UART) && (flag_TIMER < 5))
+            {
+                DC_blue = data;
+                //UART_PutChar(DC_blue);
+                TIMER_UART_Start();
+                flag_TIMER = 0;
+                blue ++;
+                green = 0;
+                flag_UART = 0;
+                
+            }
+            else if ((blue) && (data == 0xC0) && (flag_UART) && (flag_TIMER < 5))
+            {
+                //
+                //UART_PutString(" End \r\n");
+                
+                TIMER_UART_Stop();
+                stop ++;
+                blue = 0;
+                
+                flag_UART = 0;
+                
+                
+                PWM_RG_WriteCompare1(DC_red);
+                PWM_RG_WriteCompare2(DC_green);
+                PWM_B_WriteCompare(DC_blue);
+                
+            }
         }
 
             

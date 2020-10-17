@@ -14,9 +14,12 @@
 #include "UART.h"
 #include "TIMER_UART.h"
 
+extern uint8 flag_UART;
+extern uint8 flag_TIMER;
+
 CY_ISR(Custom_UART_ISR)
 {
-    if(UART_ReadRxStatus() == UART_RX_STS_FIFO_NOTEMPTY) // && flag_TIMER == 0)
+    if(UART_ReadRxStatus() == UART_RX_STS_FIFO_NOTEMPTY)
         flag_UART = 1;
 }
 

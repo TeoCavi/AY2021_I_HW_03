@@ -12,7 +12,8 @@
 #ifndef __UART_INTERRUPT_ROUTINE_H__
     #define __UART_INTERRUPT_ROUTINE_H__
     
-    #include "globalvariables.h"
+    #include "cytypes.h"
+
     
     CY_ISR_PROTO(Custom_UART_ISR);
     CY_ISR_PROTO(Custom_TIMER_ISR);
