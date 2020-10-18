@@ -23,9 +23,10 @@ int main(void)
     
     
     uint8 data;
-    uint8 DC_red = 0;
-    uint8 DC_green = 0;
-    uint8 DC_blue = 0;
+    //uint8 DC_red = 0;
+    //uint8 DC_green = 0;
+    //uint8 DC_blue = 0;
+    uint8 RGB[3] = {'\0'};
 
 
     UART_Start();
@@ -38,9 +39,11 @@ int main(void)
     
     uint8 start = 0;
     uint8 stop = 1;
-    uint8 red = 0;
-    uint8 green = 0;
-    uint8 blue = 0;
+    //uint8 red = 0;
+    //uint8 green = 0;
+    //uint8 blue = 0;
+    uint8 read = 0;
+    int i = 0;
     
     for(;;)
     {
@@ -68,21 +71,29 @@ int main(void)
                 start ++;
                 stop = 0;
                 flag_UART = 0;
+                i=0;
                 
                 
             }
             else if((flag_UART) && (start) && (flag_TIMER < 5))
             {
-                DC_red = data;
+                //DC_red = data;
                 //UART_PutChar(DC_red);
+                RGB[i] = data;
                 TIMER_UART_Start();
                 flag_TIMER = 0;
-                red ++;
-                start  = 0;
-                flag_UART = 0;
+                //red ++;
+                i++;
+                if (i == 3)
+                {
+                    start = 0;
+                    read ++;
+                }
+                flag_UART = 0;   
+                
                 
             }
-            else if((red) && (flag_UART) && (flag_TIMER < 5) )
+            /*else if((red) && (flag_UART) && (flag_TIMER < 5) )
             {
                 DC_green = data;
                 //UART_PutChar(DC_green);
@@ -103,25 +114,27 @@ int main(void)
                 green = 0;
                 flag_UART = 0;
                 
-            }
-            else if ((blue) && (data == 0xC0) && (flag_UART) && (flag_TIMER < 5))
+            }*/
+            else if (/*(blue)*/ read && (data == 0xC0) && (flag_UART) && (flag_TIMER < 5))
             {
                 //
                 //UART_PutString(" End \r\n");
                 
                 TIMER_UART_Stop();
                 stop ++;
-                blue = 0;
+                read = 0;
+                //blue = 0;
                 
                 flag_UART = 0;
                 
                 
-                PWM_RG_WriteCompare1(DC_red);
-                PWM_RG_WriteCompare2(DC_green);
-                PWM_B_WriteCompare(DC_blue);
+                PWM_RG_WriteCompare1(RGB[0]);
+                PWM_RG_WriteCompare2(RGB[1]);
+                PWM_B_WriteCompare(RGB[2]);
                 
             }
-        }
+    }
+    
 
             
         
