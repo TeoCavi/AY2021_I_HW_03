@@ -10,128 +10,98 @@
  * ========================================
 */
 #include "project.h"
+#include "driver.h"
 #include "stdio.h"
 #include "InterruptRoutines.h"
 
-uint8 flag_UART = 0;
+uint8 flag_UART = 0;                             //variabili globali per lo stato di UART e Timer
 uint8 flag_TIMER = 0;
-
 
 int main(void)
 {
-    CyGlobalIntEnable; /* Enable global interrupts. */
+    CyGlobalIntEnable;                           //abilita gli interrupt globali. 
     
+    ISR_UART_StartEx(Custom_UART_ISR);           //abilita l'isr dell UART (priorità 6)
+    ISR_TIMER_StartEx(Custom_TIMER_ISR);         //abilita l'isr del timer (priorità 7) 
     
-    uint8 data;
-    //uint8 DC_red = 0;
-    //uint8 DC_green = 0;
-    //uint8 DC_blue = 0;
-    uint8 RGB[3] = {'\0'};
+                                                 /*se le due isr arrivano in contemporanea voglio 
+                                                   che il dato non venga letto (priorità al timer)*/
+    
+    Starting_comp();                             //accensione dei vari componenti, definita in driver.c
+    
+    uint8 data;                                  //byte ricevuto
+    uint8 RGB[3] = {'\0'};                       /*array che contiene i duty cicle relativi ai vari colori 
+                                                   ricevuti come pacchetto di byte*/
 
-
-    UART_Start();
-    ISR_UART_StartEx(Custom_UART_ISR);
-    ISR_TIMER_StartEx(Custom_TIMER_ISR);
-    CLK_TIMER_Start();
-    CLK_PWM_Start();
-    PWM_RG_Start();
-    PWM_B_Start();
-    
-    uint8 start = 0;
-    uint8 stop = 1;
-    //uint8 red = 0;
-    //uint8 green = 0;
-    //uint8 blue = 0;
+    uint8 start = 0;                             //variabili che indicano lo stato; inizialmente siamo in fase di stop.
     uint8 read = 0;
-    int i = 0;
+    uint8 stop = 1;
+    
+    uint8 i = 0;                                 //variabile di memorizzazione array
     
     for(;;)
     {
-        if (flag_TIMER >= 5)
+        if (flag_TIMER >= MAX_TIME)              /*Se il timer, dopo essere attivato in seguito all'inizio 
+                                                   della lettura, supera i 5s viene stoppato. i flag viengono resettati
+                                                   e si ritorna nella condizione di idle.*/                                        
         {
             UART_PutString(" To Much Time, Repeat\r\n");
             TIMER_UART_Stop();
-            flag_TIMER = 0;
+            flag_TIMER = RESET_TIMER;
+            flag_UART = BYTE_WAIT;
             stop = 1;
         }
-        else if (flag_UART == 1)
+        else if (flag_UART == BYTE_AVAILABLE)    //se l'UART riceve un byte alza il flag e abilita questo if
         {
             data = UART_ReadRxData();
-            if (data == 'v')
+            if (data == CHECK)                   //se il byte è 'v' allora restituisce su tx la seguente striga
+            
             {
                 UART_PutString("RGB LED Program $$$\r\n");
-                flag_UART = 0;
+                flag_UART = BYTE_WAIT;
             }
-            else if((flag_UART) && (data == 0xA0) && (stop))
+            
+            else if((data == START) && (stop))   /*se il byte è 0xA0 allora inizia la lettura. imposto start = 1, 
+                                                   stop = 0 e avvio il timer*/
             {
-                //UART_PutString(" Start ");
                 TIMER_UART_Start();
-                flag_TIMER = 0;
+                flag_TIMER = RESET_TIMER;
                 
                 start ++;
                 stop = 0;
-                flag_UART = 0;
+                
+                flag_UART = BYTE_WAIT;
                 i=0;
-                
-                
             }
-            else if((flag_UART) && (start) && (flag_TIMER < 5))
+            
+            else if((start) && (flag_TIMER < MAX_TIME)) /*una volta ricevuto lo start vengono inseriti i successivi 3 byte all'interno
+                                                          dell'array RGB, in modo da settare successivamente i pwm.*/
             {
-                //DC_red = data;
-                //UART_PutChar(DC_red);
                 RGB[i] = data;
                 TIMER_UART_Start();
-                flag_TIMER = 0;
-                //red ++;
+                flag_TIMER = RESET_TIMER;
                 i++;
-                if (i == 3)
+                if (i == 3)                     /*se sono stati ricevuti tutti e tre i byte, allora si passa alla fase
+                                                  di idle. start = 0, read = 1 (lettura completata) */
                 {
                     start = 0;
                     read ++;
                 }
-                flag_UART = 0;   
                 
-                
+                flag_UART = BYTE_WAIT;    
             }
-            /*else if((red) && (flag_UART) && (flag_TIMER < 5) )
+            else if ((read) && (data == STOP) && (flag_TIMER < MAX_TIME)) /*finalizzazione della fase di lettura con
+                                                                            azzeramento di flag UART. stop = 1. successivamente settaggio PWM.*/
             {
-                DC_green = data;
-                //UART_PutChar(DC_green);
-                TIMER_UART_Start();
-                flag_TIMER = 0;
-                green  ++;
-                red = 0;
-                flag_UART = 0;
-                
-            }
-            else if ((green) && (flag_UART) && (flag_TIMER < 5))
-            {
-                DC_blue = data;
-                //UART_PutChar(DC_blue);
-                TIMER_UART_Start();
-                flag_TIMER = 0;
-                blue ++;
-                green = 0;
-                flag_UART = 0;
-                
-            }*/
-            else if (/*(blue)*/ read && (data == 0xC0) && (flag_UART) && (flag_TIMER < 5))
-            {
-                //
-                //UART_PutString(" End \r\n");
-                
                 TIMER_UART_Stop();
+                
                 stop ++;
                 read = 0;
-                //blue = 0;
                 
-                flag_UART = 0;
+                flag_TIMER = RESET_TIMER;
+                flag_UART = BYTE_WAIT;
                 
-                
-                PWM_RG_WriteCompare1(RGB[0]);
-                PWM_RG_WriteCompare2(RGB[1]);
-                PWM_B_WriteCompare(RGB[2]);
-                
+                Write_DC(RGB[0],RGB[1], RGB[2]);
             }
     }
     
